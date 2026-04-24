@@ -10,7 +10,7 @@ const nextConfig = {
     ],
   },
   env: {
-    PROD: process.env.PROD || "false",
+    PROD: process.env.PROD || "True",
   },
 };
 
