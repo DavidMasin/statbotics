@@ -11,7 +11,14 @@ This sets up the services the app needs on Railway:
 
 Each service config lives next to its code (`backend/railway.json` +
 `backend/Dockerfile`, `frontend/railway.json`). In Railway, set each service's
-**Root Directory** to `backend` or `frontend` so it picks these up.
+**Root Directory** to `backend` or `frontend` so it picks these up. The two
+batch jobs reuse the backend image via their own profiles
+(`backend/railway.rebuild.json`, `backend/railway.updater.json`) selected with
+the per-service **Config File** setting.
+
+> The Config File path is relative to the service's Root Directory (e.g.
+> `railway.updater.json` when Root Directory is `backend`). If Railway resolves
+> it from the repo root instead, use `backend/railway.updater.json`.
 
 The backend talks to Postgres directly; the frontend talks to the backend's
 site API. GCS is not used in this setup (see `SKIP_GCS` / `USE_BUCKET` below).
@@ -82,6 +89,17 @@ A fresh deploy has an empty database. Populate it with a full rebuild — see
 frontend to show data. The rebuild loads every event for the current year,
 including district events that are in progress (e.g. Israel district).
 
+The cleanest way to run it is a **temporary one-off service** using the
+ready-made `backend/railway.rebuild.json` profile (start command
+`python run_full_rebuild.py`, never restarts):
+
+- **Root Directory:** `backend`
+- **Config File:** `railway.rebuild.json` (Settings → Config-as-code)
+- **Variables:** `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `SKIP_GCS=True`
+
+Deploy it once; it builds, runs the rebuild to completion, prints
+`Full rebuild complete.`, and exits. Delete the service when it's done.
+
 ## Keeping the site updated during competition
 
 After the one-time rebuild, run the **incremental update** on a schedule so the
@@ -90,15 +108,19 @@ events/matches/rankings for the current year and recomputes only when there's
 something new (newly created events are picked up too, not just new matches).
 
 Set this up as a **Railway cron service** (a fourth service, separate from the
-always-on `backend`):
+always-on `backend`) using the ready-made `backend/railway.updater.json`
+profile (start command `python run_update.py`, cron `*/10 * * * *`, never
+restarts):
 
 - **Root Directory:** `backend` (same repo + Dockerfile as the backend).
+- **Config File:** `railway.updater.json` (Settings → Config-as-code).
 - **Variables:** `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `SKIP_GCS=True`
   (same as the backend service).
-- **Custom Start Command:** `python run_update.py`
-- **Cron Schedule:** e.g. `*/10 * * * *` (every 10 minutes). Railway starts the
-  container on the schedule; the script runs once and exits. A run with no new
-  data exits in seconds; a run with new matches recomputes the current year.
+
+Railway starts the container on the schedule; the script runs once and exits. A
+run with no new data exits in seconds; a run with new matches recomputes the
+current year. To change the interval, edit `cronSchedule` in
+`railway.updater.json`.
 
 > Cron services must run to completion and exit — `run_update.py` does. Keep the
 > always-on `backend` service separate from this cron service.
