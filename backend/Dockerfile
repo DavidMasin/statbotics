@@ -16,5 +16,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Railway provides $PORT at runtime; shell form lets it expand.
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# start.sh resolves $PORT in a shell, so the container starts correctly whether
+# or not the platform runs the start command through a shell.
+CMD ["sh", "start.sh"]
