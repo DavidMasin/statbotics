@@ -1,6 +1,6 @@
 from typing import Any, Dict, Tuple
 
-from sqlalchemy import Boolean, Enum, Float, Integer, String
+from sqlalchemy import BigInteger, Boolean, Enum, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.schema import ForeignKeyConstraint, PrimaryKeyConstraint
 
@@ -28,7 +28,7 @@ class TeamEventORM(Base, ModelORM):
     ForeignKeyConstraint(["event"], ["events.key"])
 
     """GENERAL"""
-    time: MI = mapped_column(Integer)
+    time: MI = mapped_column(BigInteger)  # Unix timestamp; 64-bit (see match.py)
 
     """API COMPLETENESS"""
     team_name: MS = mapped_column(String(100))

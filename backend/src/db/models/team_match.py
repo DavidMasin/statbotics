@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from sqlalchemy import Boolean, Enum, Float, Integer, String
+from sqlalchemy import BigInteger, Boolean, Enum, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.schema import ForeignKeyConstraint, PrimaryKeyConstraint
 
@@ -31,7 +31,7 @@ class TeamMatchORM(Base, ModelORM):
     ForeignKeyConstraint(["team", "event"], ["team_events.team", "team_events.event"])
 
     """GENERAL"""
-    time: MI = mapped_column(Integer)
+    time: MI = mapped_column(BigInteger)  # Unix timestamp; 64-bit (see match.py)
     week: MI = mapped_column(Integer)
     elim: MB = mapped_column(Boolean)
 
