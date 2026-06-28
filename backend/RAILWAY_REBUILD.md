@@ -41,34 +41,43 @@ If you hit an SSL error connecting, append `?sslmode=require` to the URL.
 
 ## 3. Run the rebuild
 
-The project root for the backend service is `backend/` (where `pyproject.toml`
-lives). Nixpacks will detect Poetry and install dependencies.
+The backend Docker image already contains the code and dependencies (installed
+from `requirements.txt`) and the `DATABASE_URL` / `SKIP_GCS` variables, so the
+rebuild runs with a plain `python` (there is no Poetry inside the image).
 
-**Option A — run inside Railway (recommended; DB writes stay on Railway's
-private network, and TBA is reachable from Railway):**
+**Option A — run inside the deployed backend service (recommended; DB writes
+stay on Railway's private network, and TBA is reachable from Railway):**
 
-Set the service start command (or a one-off / manual deploy command) to:
+Open a shell on the backend service (`railway ssh`, or the service's shell in
+the dashboard) and run:
 
 ```bash
-poetry run python run_full_rebuild.py
+python run_full_rebuild.py
 ```
 
-Because this is a one-shot job rather than a long-lived web server, run it as a
-manual one-off (or a temporary service you stop once it prints
-`Full rebuild complete.`) so Railway doesn't keep restarting it on exit.
+Keep the session open until it prints `Full rebuild complete.`. For a long run,
+a dedicated one-off service (Option B) is more robust.
 
-**Option B — run from your own machine against the Railway DB:**
+**Option B — temporary one-off service:**
+
+Add a second service in the same project from the same repo (Root Directory
+`backend`, same Dockerfile), set `DATABASE_URL=${{Postgres.DATABASE_URL}}` and
+`SKIP_GCS=True`, and set its start command to `python run_full_rebuild.py`. It
+runs once, writes to the shared Postgres, and (with the `ON_FAILURE` restart
+policy) won't restart after a successful exit. Delete it when it finishes.
+
+**Option C — run from your own machine against the Railway DB:**
 
 ```bash
 cd backend
-poetry install
+pip install -r requirements.txt
 railway link                 # pick the project + the service holding the vars
-railway run poetry run python run_full_rebuild.py
+railway run python run_full_rebuild.py
 ```
 
 `railway run` injects `DATABASE_URL` and `SKIP_GCS` from Railway, executes
-locally, and writes to Railway Postgres over its public URL. Requires Poetry +
-TBA reachable locally.
+locally, and writes to Railway Postgres over its public URL. Requires the deps
+installed locally and TBA reachable.
 
 ## Notes
 
