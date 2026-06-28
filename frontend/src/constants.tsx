@@ -5,9 +5,30 @@ export const PROD = process.env.PROD === "True";
 // self-hosted backend on Railway). Set USE_BUCKET=false to skip the GCS bucket
 // entirely and read everything from the backend site API (the path used when
 // the backend isn't uploading to GCS).
-export const BACKEND_URL =
+
+// Make a self-hosted BACKEND_URL forgiving: add a scheme if missing (so it
+// isn't treated as a path relative to the frontend origin) and default to the
+// /v3/site mount when only an origin is given.
+function normalizeBackendUrl(raw: string): string {
+  let url = raw.trim().replace(/\/+$/, "");
+  if (!/^https?:\/\//i.test(url)) {
+    url = `https://${url}`;
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname === "" || parsed.pathname === "/") {
+      url = `${url}/v3/site`;
+    }
+  } catch {
+    // leave url as-is if it can't be parsed
+  }
+  return url;
+}
+
+export const BACKEND_URL = normalizeBackendUrl(
   process.env.BACKEND_URL ||
-  (PROD ? "https://api.statbotics.io/v3/site" : "http://127.0.0.1:8000/v3/site");
+    (PROD ? "https://api.statbotics.io/v3/site" : "http://127.0.0.1:8000/v3/site")
+);
 
 export const BUCKET_URL =
   process.env.BUCKET_URL ||

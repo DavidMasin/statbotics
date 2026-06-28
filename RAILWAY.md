@@ -54,7 +54,7 @@ string as the reference variable `${{Postgres.DATABASE_URL}}`.
 
   | Variable | Value | Notes |
   |----------|-------|-------|
-  | `BACKEND_URL` | `https://<backend-domain>/v3/site` | Point the site at the Railway backend. **Must include the `/v3/site` suffix.** |
+  | `BACKEND_URL` | `https://<backend-domain>` | Point the site at the Railway backend's **public** domain. A missing `https://` is added and `/v3/site` is appended automatically, so the bare domain is enough. |
   | `USE_BUCKET` | `false` | Read everything from the backend instead of GCS. |
   | `NODE_OPTIONS` | `--max_old_space_size=3072` | Optional; avoids OOM on the Next build. |
 
