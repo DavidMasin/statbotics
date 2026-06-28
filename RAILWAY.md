@@ -1,12 +1,13 @@
 # Deploying Statbotics on Railway
 
-This sets up the three services the app needs on Railway:
+This sets up the services the app needs on Railway:
 
 | Service | What it is | Source |
 |---------|-----------|--------|
 | **db** | PostgreSQL (stands in for the production CockroachDB) | Railway Postgres plugin |
 | **backend** | FastAPI app — REST API + site API | `backend/` |
 | **frontend** | Next.js 13 website | `frontend/` |
+| **updater** (optional) | Cron service that incrementally refreshes the current year | `backend/` (see "Keeping the site updated") |
 
 Each service config lives next to its code (`backend/railway.json` +
 `backend/Dockerfile`, `frontend/railway.json`). In Railway, set each service's
@@ -78,4 +79,29 @@ string as the reference variable `${{Postgres.DATABASE_URL}}`.
 A fresh deploy has an empty database. Populate it with a full rebuild — see
 [`backend/RAILWAY_REBUILD.md`](backend/RAILWAY_REBUILD.md). Run it against the
 **same Postgres** (`DATABASE_URL` / `SKIP_GCS=True`) before expecting the
-frontend to show data.
+frontend to show data. The rebuild loads every event for the current year,
+including district events that are in progress (e.g. Israel district).
+
+## Keeping the site updated during competition
+
+After the one-time rebuild, run the **incremental update** on a schedule so the
+site refreshes as matches happen. `backend/run_update.py` checks TBA for new
+events/matches/rankings for the current year and recomputes only when there's
+something new (newly created events are picked up too, not just new matches).
+
+Set this up as a **Railway cron service** (a fourth service, separate from the
+always-on `backend`):
+
+- **Root Directory:** `backend` (same repo + Dockerfile as the backend).
+- **Variables:** `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `SKIP_GCS=True`
+  (same as the backend service).
+- **Custom Start Command:** `python run_update.py`
+- **Cron Schedule:** e.g. `*/10 * * * *` (every 10 minutes). Railway starts the
+  container on the schedule; the script runs once and exits. A run with no new
+  data exits in seconds; a run with new matches recomputes the current year.
+
+> Cron services must run to completion and exit — `run_update.py` does. Keep the
+> always-on `backend` service separate from this cron service.
+
+Tune the interval to the competition: every 5–10 minutes during event days is
+plenty. There's no harm in frequent runs — they no-op when TBA is unchanged.
