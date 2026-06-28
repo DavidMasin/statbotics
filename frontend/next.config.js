@@ -11,6 +11,9 @@ const nextConfig = {
   },
   env: {
     PROD: process.env.PROD || "false",
+    BACKEND_URL: process.env.BACKEND_URL || "",
+    BUCKET_URL: process.env.BUCKET_URL || "",
+    USE_BUCKET: process.env.USE_BUCKET || "",
   },
 };
 

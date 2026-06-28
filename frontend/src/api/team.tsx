@@ -1,4 +1,4 @@
-import { BUCKET_URL, CURR_YEAR } from "../constants";
+import { BUCKET_URL, CURR_YEAR, USE_BUCKET } from "../constants";
 import { APITeam, APITeamEvent } from "../types/api";
 import { TeamYearData, TeamYearRedirect } from "../types/data";
 import { getEvent } from "./event";
@@ -34,7 +34,7 @@ export async function getTeamYear(
 
   try {
     // try to reconstruct output from team, team_to_events, and events
-    if (year !== CURR_YEAR) {
+    if (!USE_BUCKET || year !== CURR_YEAR) {
       throw new Error("Not current year");
     }
     const [teamToEvents, teamData, teamYearData] = await Promise.all([
