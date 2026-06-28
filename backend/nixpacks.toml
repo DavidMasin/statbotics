@@ -1,4 +1,0 @@
-# libpq-dev provides pg_config, which the psycopg2 source build needs.
-# Without it the Poetry install fails to compile psycopg2 on Railway.
-[phases.setup]
-aptPkgs = ["libpq-dev"]

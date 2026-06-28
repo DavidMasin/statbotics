@@ -8,9 +8,9 @@ This sets up the three services the app needs on Railway:
 | **backend** | FastAPI app — REST API + site API | `backend/` |
 | **frontend** | Next.js 13 website | `frontend/` |
 
-Each service config lives next to its code (`backend/railway.json`,
-`backend/nixpacks.toml`, `frontend/railway.json`). In Railway, set each
-service's **Root Directory** to `backend` or `frontend` so it picks these up.
+Each service config lives next to its code (`backend/railway.json` +
+`backend/Dockerfile`, `frontend/railway.json`). In Railway, set each service's
+**Root Directory** to `backend` or `frontend` so it picks these up.
 
 The backend talks to Postgres directly; the frontend talks to the backend's
 site API. GCS is not used in this setup (see `SKIP_GCS` / `USE_BUCKET` below).
@@ -27,9 +27,12 @@ string as the reference variable `${{Postgres.DATABASE_URL}}`.
 ## 2. backend service
 
 - **Root Directory:** `backend`
-- **Build/Deploy:** from `backend/railway.json` (Nixpacks; start command
-  `uvicorn main:app --host 0.0.0.0 --port $PORT`). `backend/nixpacks.toml` adds
-  `libpq-dev` so the `psycopg2` build succeeds.
+- **Build/Deploy:** from `backend/railway.json` → `backend/Dockerfile`. The
+  Dockerfile installs the pinned `requirements.txt` (so `uvicorn` is on PATH)
+  and `gcc`/`libpq-dev` (so the `psycopg2` build succeeds), and starts
+  `uvicorn main:app --host 0.0.0.0 --port $PORT`. A Dockerfile is used instead
+  of Nixpacks because the repo has no `poetry.lock`, which left Nixpacks in an
+  ambiguous poetry/pip state where `uvicorn` wasn't on PATH.
 - **Variables:**
 
   | Variable | Value | Notes |
