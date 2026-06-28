@@ -3,9 +3,10 @@
 # deploys use, so uvicorn lands on PATH.
 FROM python:3.11-slim
 
-# gcc + libpq-dev are needed to build psycopg2 from source.
+# build-essential (gcc + libc6-dev headers) and libpq-dev are needed to build
+# psycopg2 from source. Bare gcc is not enough on slim — it lacks stdlib.h.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc libpq-dev \
+    && apt-get install -y --no-install-recommends build-essential libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
