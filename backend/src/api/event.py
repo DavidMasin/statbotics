@@ -32,7 +32,7 @@ async def read_root_event():
 
 
 @alru_cache(ttl=timedelta(minutes=2))
-async def get_event_cached(
+def get_event_cached(
     event: str,
     no_cache: bool = False,
 ) -> Tuple[bool, Optional[Event]]:
@@ -40,7 +40,7 @@ async def get_event_cached(
 
 
 @alru_cache(ttl=timedelta(minutes=2))
-async def get_events_cached(
+def get_events_cached(
     year: Optional[int] = None,
     country: Optional[str] = None,
     state: Optional[str] = None,

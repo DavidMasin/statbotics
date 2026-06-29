@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import (
@@ -20,7 +21,7 @@ TKey = Tuple[Tuple[Any, ...], FrozenSet[Tuple[str, Any]]]
 
 def alru_cache(max_size: int = 8, ttl: timedelta = timedelta(minutes=1)):
     def decorator(
-        func: Callable[Param, Awaitable[Tuple[bool, TOutput]]]
+        func: Callable[Param, Tuple[bool, TOutput]]
     ) -> Callable[Param, Awaitable[TOutput]]:
         cache: Dict[TKey, Tuple[datetime, TOutput]] = {}
         keys: List[TKey] = []
@@ -64,14 +65,21 @@ def alru_cache(max_size: int = 8, ttl: timedelta = timedelta(minutes=1)):
             key: TKey = tuple(args), frozenset(
                 [(k, v) for k, v in kwargs.items() if k not in ["no_cache"]]
             )
+
+            async def call() -> Tuple[bool, TOutput]:
+                # Run the blocking, DB-bound function in a thread so it never
+                # blocks the event loop. Cache hits below skip this entirely.
+                loop = asyncio.get_running_loop()
+                return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
+
             if "no_cache" in kwargs and kwargs["no_cache"]:
-                (flag, value) = await func(*args, **kwargs)
+                (flag, value) = await call()
                 return update_cache_and_return(key, flag, value)
 
             if in_cache(key):
                 return cache[key][1]
 
-            (flag, value) = await func(*args, **kwargs)
+            (flag, value) = await call()
             return update_cache_and_return(key, flag, value)
 
         return wrapper

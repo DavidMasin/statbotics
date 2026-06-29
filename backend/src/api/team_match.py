@@ -32,14 +32,14 @@ async def read_root_team_match():
 
 
 @alru_cache(ttl=timedelta(minutes=2))
-async def get_team_match_cached(
+def get_team_match_cached(
     team: int, match: str, no_cache: bool = False
 ) -> Tuple[bool, Optional[TeamMatch]]:
     return (True, get_team_match(team=team, match=match))
 
 
 @alru_cache(ttl=timedelta(minutes=2))
-async def get_team_matches_cached(
+def get_team_matches_cached(
     team: Optional[int] = None,
     year: Optional[int] = None,
     event: Optional[str] = None,

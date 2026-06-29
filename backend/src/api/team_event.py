@@ -34,14 +34,14 @@ async def read_root_team_event():
 
 
 @alru_cache(ttl=timedelta(minutes=2))
-async def get_team_event_cached(
+def get_team_event_cached(
     team: int, event: str, no_cache: bool = False
 ) -> Tuple[bool, Optional[TeamEvent]]:
     return (True, get_team_event(team=team, event=event))
 
 
 @alru_cache(ttl=timedelta(minutes=2))
-async def get_team_events_cached(
+def get_team_events_cached(
     team: Optional[int] = None,
     year: Optional[int] = None,
     event: Optional[str] = None,

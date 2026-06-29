@@ -8,7 +8,15 @@ from src.constants import CONN_STR
 # closing idle connections), which matters for the long rebuild and the
 # always-on updater. pool_recycle proactively refreshes connections that have
 # been idle too long.
-engine = create_engine(CONN_STR, pool_pre_ping=True, pool_recycle=1800)
+engine = create_engine(
+    CONN_STR,
+    pool_pre_ping=True,
+    pool_recycle=1800,
+    # Reads now run in a thread pool (see alru_cache), so allow more concurrent
+    # connections than the default 5 + 10 to avoid checkout contention.
+    pool_size=10,
+    max_overflow=20,
+)
 
 Session = sessionmaker(bind=engine)
 
