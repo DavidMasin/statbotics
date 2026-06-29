@@ -51,6 +51,14 @@ CONN_STR = (
 # rebuild on an environment without Google Cloud credentials).
 SKIP_GCS = os.getenv("SKIP_GCS", "False") == "True"
 
+# Seconds between in-process incremental updates of the current year. When > 0,
+# the API server runs the update loop itself (no separate cron service needed).
+# 0 disables it. Only set this on a single-process deployment.
+try:
+    AUTO_UPDATE_INTERVAL = int(os.getenv("AUTO_UPDATE_INTERVAL", "0"))
+except ValueError:
+    AUTO_UPDATE_INTERVAL = 0
+
 # API
 
 AUTH_KEY_BLACKLIST: List[str] = []

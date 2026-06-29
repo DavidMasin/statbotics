@@ -1,3 +1,4 @@
+import asyncio
 import platform
 from typing import Any, Callable
 
@@ -17,7 +18,7 @@ load_dotenv()
 from src.api.router import router as api_router
 
 # from src.constants import AUTH_KEY_BLACKLIST, CONN_STR, PROD
-from src.constants import CONN_STR, PROD
+from src.constants import AUTO_UPDATE_INTERVAL, CONN_STR, PROD
 from src.data.router import (
     data_router as data_data_router,
     site_router as data_site_router,
@@ -94,3 +95,27 @@ app.include_router(api_router, prefix="/v3")
 app.include_router(data_data_router, prefix="/v3/data", include_in_schema=False)
 app.include_router(data_site_router, prefix="/v3/site", include_in_schema=False)
 app.include_router(site_router, prefix="/v3/site", include_in_schema=False)
+
+
+@app.on_event("startup")
+async def start_auto_updater():
+    # Opt-in: when AUTO_UPDATE_INTERVAL > 0, this single server keeps the current
+    # year fresh itself, so no separate cron service is needed. The update is run
+    # in a thread so it never blocks request serving.
+    if AUTO_UPDATE_INTERVAL <= 0:
+        return
+
+    from src.data.main import run_incremental_update
+
+    async def _loop():
+        while True:
+            await asyncio.sleep(AUTO_UPDATE_INTERVAL)
+            try:
+                ran = await asyncio.get_event_loop().run_in_executor(
+                    None, run_incremental_update
+                )
+                print(f"[auto-update] {'updated' if ran else 'no new data'}")
+            except Exception as e:  # keep the loop alive across failures
+                print(f"[auto-update] error: {e}")
+
+    asyncio.create_task(_loop())

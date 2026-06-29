@@ -138,6 +138,20 @@ def reset_all_years():
     post_process(teams, all_team_years)
 
 
+def run_incremental_update() -> bool:
+    """Update the current year if TBA has new data. Returns True if it ran."""
+    from src.data.tba import check_year_partial
+    from src.db.read import get_etags, get_events
+
+    event_objs = get_events(year=CURR_YEAR)
+    etags = get_etags(CURR_YEAR)
+    if not check_year_partial(CURR_YEAR, event_objs, etags):
+        return False
+
+    update_curr_year(partial=True)
+    return True
+
+
 def update_curr_year(partial: bool):
     year = CURR_YEAR
     timer = Timer()

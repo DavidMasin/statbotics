@@ -127,3 +127,18 @@ current year. To change the interval, edit `cronSchedule` in
 
 Tune the interval to the competition: every 5–10 minutes during event days is
 plenty. There's no harm in frequent runs — they no-op when TBA is unchanged.
+
+### Alternative: no extra service (in-process updater)
+
+If you'd rather not run a separate service, the **backend service can update
+itself**. Set one variable on the existing backend service:
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `AUTO_UPDATE_INTERVAL` | `600` | Seconds between in-process current-year updates (e.g. 600 = 10 min). `0`/unset disables it. |
+
+The backend then runs the same incremental update on that interval in a
+background thread (so it never blocks request serving), and you don't need the
+cron service at all. Only enable this on a **single-process** deployment — the
+backend Dockerfile runs one uvicorn process, so that's already the case here.
+Don't run both the cron service and `AUTO_UPDATE_INTERVAL` at once.
