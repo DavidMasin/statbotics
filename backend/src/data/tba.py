@@ -237,7 +237,23 @@ def process_year(
 
     for event_obj in event_objs_dict.values():
         if partial:
-            if event_obj.week != CURR_WEEK and event_obj.status != EventStatus.ONGOING:
+            # Process events in the current week, currently-ongoing events, and
+            # any event whose date window includes now. The last case matters
+            # for a newly-created event that is already happening but is still
+            # marked UPCOMING (and may not be in CURR_WEEK): without it, its
+            # matches are never fetched, so it never becomes ONGOING and stays
+            # skipped forever.
+            now = datetime.now()
+            start_date = datetime.strptime(event_obj.start_date, "%Y-%m-%d")
+            end_date = datetime.strptime(event_obj.end_date, "%Y-%m-%d")
+            active_now = (
+                start_date - timedelta(days=1) <= now <= end_date + timedelta(days=1)
+            )
+            if (
+                event_obj.week != CURR_WEEK
+                and event_obj.status != EventStatus.ONGOING
+                and not active_now
+            ):
                 continue
 
         event_key, event_time = event_obj.key, event_obj.time
